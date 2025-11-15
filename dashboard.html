@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCart - AI Meal Planning</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            padding-top: 70px;
+            background: var(--bg-secondary);
+        }
+
+        .page-header {
+            background: var(--bg-primary);
+            padding: var(--spacing-2xl) 0;
+            margin-bottom: var(--spacing-2xl);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        body.dark-mode .page-header {
+            border-bottom-color: var(--gray-700);
+        }
+
+        .planner-container {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: var(--spacing-2xl);
+        }
+
+        .planner-form {
+            background: var(--bg-primary);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            height: fit-content;
+        }
+
+        body.dark-mode .planner-form {
+            border-color: var(--gray-700);
+        }
+
+        .form-section {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .form-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+
+        .diet-options, .budget-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-sm);
+        }
+
+        .option-btn {
+            background: var(--bg-secondary);
+            border: 2px solid var(--gray-300);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            text-align: center;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        body.dark-mode .option-btn {
+            border-color: var(--gray-600);
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .option-btn.selected {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .preferences-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .preference-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .preference-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .preference-item label {
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+
+        .plan-result {
+            background: var(--bg-primary);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+        }
+
+        body.dark-mode .plan-result {
+            border-color: var(--gray-700);
+        }
+
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .plan-meal {
+            background: var(--bg-secondary);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .meal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .meal-time {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 1.125rem;
+        }
+
+        .meal-calories {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        body.dark-mode .meal-calories {
+            background: var(--primary-dark);
+            color: var(--primary-light);
+        }
+
+        .meal-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+            color: var(--text-primary);
+        }
+
+        .meal-description {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+            line-height: 1.6;
+        }
+
+        .saved-plans {
+            margin-top: var(--spacing-2xl);
+        }
+
+        .saved-plan-card {
+            background: var(--bg-primary);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--gray-200);
+            margin-bottom: var(--spacing-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        body.dark-mode .saved-plan-card {
+            border-color: var(--gray-700);
+        }
+
+        .saved-plan-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-md);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 5rem;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        @media (max-width: 1024px) {
+            .planner-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .diet-options, .budget-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="js/main.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="nav-brand">
+                <span class="brand-icon">🛒</span>
+                <span class="brand-name">SmartCart</span>
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-item active">Dashboard</a>
+                <a href="inventory.html" class="nav-item">Inventory</a>
+                <a href="suggestions.html" class="nav-item">AI Suggestions</a>
+                <a href="profile.html" class="nav-item">Analytics</a>
+                <a href="settings.html" class="nav-item">Settings</a>
+                <button class="btn btn-small" onclick="SmartCart.toggleDarkMode()">
+                    <span id="theme-icon">🌙</span>
+                </button>
+                <button class="btn btn-small btn-secondary" onclick="SmartCart.handleLogout()">
+                    Logout
+                </button>
+            </div>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <!-- Email Verification Banner -->
+            <div id="verification-banner" style="display: none; background: linear-gradient(135deg, #ff9800, #f57c00); color: white; padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);">
+                <div style="display: flex; align-items: center; gap: var(--spacing-md); justify-content: space-between; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                        <span style="font-size: 1.5rem;">⚠️</span>
+                        <div>
+                            <strong>Email Not Verified</strong>
+                            <p style="margin: 0; font-size: 0.9rem; opacity: 0.95;">Please verify your email to access all features and receive important notifications.</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-small" onclick="resendVerificationEmail()" style="background: white; color: #f57c00; font-weight: 600; white-space: nowrap;">
+                        📧 Resend Verification
+                    </button>
+                </div>
+            </div>
+
+            <!-- Expiry Warnings Banner -->
+            <div id="expiry-banner" style="display: none; background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);">
+                <div style="display: flex; align-items: center; gap: var(--spacing-md); justify-content: space-between; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: var(--spacing-md); flex: 1;">
+                        <span style="font-size: 1.5rem;">🚨</span>
+                        <div style="flex: 1;">
+                            <strong id="expiry-title">Items Expiring Soon</strong>
+                            <div id="expiry-items" style="margin-top: 4px; font-size: 0.9rem; opacity: 0.95;"></div>
+                        </div>
+                    </div>
+                    <a href="inventory.html" class="btn btn-small" style="background: white; color: #b91c1c; font-weight: 600; white-space: nowrap; text-decoration: none;">
+                        🛒 View Inventory
+                    </a>
+                </div>
+            </div>
+            
+            <h1 class="page-title">🤖 AI Meal Planning</h1>
+            <p class="page-description">Get personalized meal plans based on your budget and preferences</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="planner-container">
+            <!-- Planner Form -->
+            <div class="planner-form">
+                <h3 style="margin-bottom: var(--spacing-xl);">Customize Your Plan</h3>
+                
+                <!-- Budget Section -->
+                <div class="form-section">
+                    <div class="section-title">Budget</div>
+                    <div class="form-group">
+                        <label class="form-label" for="budget-amount">Amount (₹)</label>
+                        <input type="number" id="budget-amount" class="form-input" placeholder="500" min="0">
+                    </div>
+                    <div class="budget-options">
+                        <button class="option-btn" data-budget="weekly" onclick="selectBudget(this, 'weekly')">
+                            📅 Weekly
+                        </button>
+                        <button class="option-btn selected" data-budget="monthly" onclick="selectBudget(this, 'monthly')">
+                            📆 Monthly
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Diet Type Section -->
+                <div class="form-section">
+                    <div class="section-title">Diet Preference</div>
+                    <div class="diet-options">
+                        <button class="option-btn" data-diet="veg" onclick="selectDiet(this, 'veg')">
+                            🥗 Vegetarian
+                        </button>
+                        <button class="option-btn" data-diet="non-veg" onclick="selectDiet(this, 'non-veg')">
+                            🍗 Non-Veg
+                        </button>
+                        <button class="option-btn" data-diet="protein" onclick="selectDiet(this, 'protein')">
+                            💪 Protein-Rich
+                        </button>
+                        <button class="option-btn" data-diet="weight-loss" onclick="selectDiet(this, 'weight-loss')">
+                            🏃 Weight Loss
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Preferences Section -->
+                <div class="form-section">
+                    <div class="section-title">Additional Preferences</div>
+                    <div class="preferences-list">
+                        <div class="preference-item">
+                            <input type="checkbox" id="pref-organic" value="organic">
+                            <label for="pref-organic">Prefer Organic</label>
+                        </div>
+                        <div class="preference-item">
+                            <input type="checkbox" id="pref-local" value="local">
+                            <label for="pref-local">Local Produce</label>
+                        </div>
+                        <div class="preference-item">
+                            <input type="checkbox" id="pref-gluten-free" value="gluten-free">
+                            <label for="pref-gluten-free">Gluten-Free</label>
+                        </div>
+                        <div class="preference-item">
+                            <input type="checkbox" id="pref-dairy-free" value="dairy-free">
+                            <label for="pref-dairy-free">Dairy-Free</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <button class="btn btn-primary btn-large" style="width: 100%;" onclick="handleGeneratePlan()">
+                    ✨ Generate AI Plan
+                </button>
+            </div>
+
+            <!-- Plan Result -->
+            <div class="plan-result" id="plan-result">
+                <div class="empty-state">
+                    <div class="empty-icon">🍽️</div>
+                    <h3>Your AI Meal Plan Will Appear Here</h3>
+                    <p>Fill out the form on the left and click "Generate AI Plan" to get started!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedBudgetType = 'monthly';
+        let selectedDietType = '';
+
+        // Load on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await SmartCart.requireAuth();
+            await checkEmailVerification();
+            await checkExpiringItems();
+        });
+
+        // Check for expiring items
+        async function checkExpiringItems() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                const { data: items, error } = await supabase
+                    .from('grocery_items')
+                    .select('*')
+                    .eq('user_id', user.id);
+
+                if (error) throw error;
+
+                if (!items || items.length === 0) return;
+
+                // Function to get expiry status
+                function getExpiryStatus(expiryDate) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const expiry = new Date(expiryDate);
+                    expiry.setHours(0, 0, 0, 0);
+                    const daysUntilExpiry = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+                    
+                    if (daysUntilExpiry < 0) {
+                        return { status: 'expired', days: Math.abs(daysUntilExpiry) };
+                    } else if (daysUntilExpiry === 0) {
+                        return { status: 'expires-today', days: 0 };
+                    } else if (daysUntilExpiry <= 2) {
+                        return { status: 'expiring-soon', days: daysUntilExpiry };
+                    }
+                    return { status: 'fresh', days: daysUntilExpiry };
+                }
+
+                const expired = items.filter(item => {
+                    const status = getExpiryStatus(item.expiry);
+                    return status.status === 'expired';
+                });
+
+                const expiringSoon = items.filter(item => {
+                    const status = getExpiryStatus(item.expiry);
+                    return status.status === 'expiring-soon' || status.status === 'expires-today';
+                });
+
+                if (expired.length > 0) {
+                    const banner = document.getElementById('expiry-banner');
+                    const title = document.getElementById('expiry-title');
+                    const itemsList = document.getElementById('expiry-items');
+                    
+                    title.textContent = `🗑️ ${expired.length} Item(s) Expired!`;
+                    const expiredNames = expired.slice(0, 5).map(item => `${item.name}`).join(', ');
+                    itemsList.textContent = `Remove expired items: ${expiredNames}${expired.length > 5 ? ` and ${expired.length - 5} more` : ''}`;
+                    banner.style.display = 'block';
+                } else if (expiringSoon.length > 0) {
+                    const banner = document.getElementById('expiry-banner');
+                    const title = document.getElementById('expiry-title');
+                    const itemsList = document.getElementById('expiry-items');
+                    
+                    banner.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+                    banner.style.boxShadow = '0 2px 8px rgba(245, 158, 11, 0.2)';
+                    title.textContent = `⏰ ${expiringSoon.length} Item(s) Expiring Soon!`;
+                    
+                    const expiringDetails = expiringSoon.slice(0, 5).map(item => {
+                        const status = getExpiryStatus(item.expiry);
+                        return `${item.name} (${status.days === 0 ? 'today' : status.days + 'd'})`;
+                    }).join(', ');
+                    itemsList.textContent = `Use soon: ${expiringDetails}${expiringSoon.length > 5 ? ` and ${expiringSoon.length - 5} more` : ''}`;
+                    banner.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error checking expiring items:', error);
+            }
+        }
+
+        // Check if email is verified and show banner
+        async function checkEmailVerification() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const isVerified = user.email_confirmed_at !== null;
+
+                if (!isVerified) {
+                    document.getElementById('verification-banner').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error checking email verification:', error);
+            }
+        }
+
+        // Resend verification email
+        async function resendVerificationEmail() {
+            try {
+                SmartCart.showLoading();
+                const { data: { user } } = await supabase.auth.getUser();
+
+                const { error } = await supabase.auth.resend({
+                    type: 'signup',
+                    email: user.email
+                });
+
+                if (error) throw error;
+
+                SmartCart.showToast('Verification email sent! Please check your inbox.', 'success');
+            } catch (error) {
+                console.error('Error sending verification email:', error);
+                SmartCart.showToast('Failed to send verification email', 'error');
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Select budget type
+        function selectBudget(element, type) {
+            document.querySelectorAll('[data-budget]').forEach(btn => btn.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedBudgetType = type;
+        }
+
+        // Select diet type
+        function selectDiet(element, type) {
+            document.querySelectorAll('[data-diet]').forEach(btn => btn.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedDietType = type;
+        }
+
+        // Get selected preferences
+        function getSelectedPreferences() {
+            const prefs = [];
+            document.querySelectorAll('.preference-item input:checked').forEach(checkbox => {
+                prefs.push(checkbox.value);
+            });
+            return prefs;
+        }
+
+        // Generate AI Plan
+        async function handleGeneratePlan() {
+            const budget = document.getElementById('budget-amount').value;
+            
+            if (!budget) {
+                SmartCart.showToast('Please enter a budget amount', 'error');
+                return;
+            }
+
+            if (!selectedDietType) {
+                SmartCart.showToast('Please select a diet preference', 'error');
+                return;
+            }
+
+            const preferences = getSelectedPreferences();
+
+            try {
+                SmartCart.showLoading();
+                const { data: { user } } = await supabase.auth.getUser();
+
+                // Save plan to database
+                const { data, error } = await supabase
+                    .from('plans')
+                    .insert([{
+                        user_id: user.id,
+                        budget: parseFloat(budget),
+                        budget_type: selectedBudgetType,
+                        diet_type: selectedDietType,
+                        preferences: preferences,
+                        status: 'generated',
+                        saved: false
+                    }])
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                // Generate and display mock plan
+                displayGeneratedPlan(budget, selectedBudgetType, selectedDietType, preferences);
+                SmartCart.showToast('Plan generated successfully!', 'success');
+
+            } catch (error) {
+                console.error('Error generating plan:', error);
+                SmartCart.showToast('Failed to generate plan', 'error');
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Display generated plan
+        function displayGeneratedPlan(budget, budgetType, dietType, preferences) {
+            const planResult = document.getElementById('plan-result');
+            
+            // Generate mock meals based on diet type
+            const meals = generateMockMeals(dietType);
+            
+            planResult.innerHTML = `
+                <div class="plan-header">
+                    <div>
+                        <h2>Your ${budgetType.charAt(0).toUpperCase() + budgetType.slice(1)} Plan</h2>
+                        <p style="color: var(--text-secondary);">Budget: ${SmartCart.formatCurrency(budget)}</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="savePlan()">
+                        💾 Save Plan
+                    </button>
+                </div>
+
+                ${meals.map(meal => `
+                    <div class="plan-meal">
+                        <div class="meal-header">
+                            <div class="meal-time">${meal.time}</div>
+                            <div class="meal-calories">${meal.calories} cal</div>
+                        </div>
+                        <div class="meal-name">${meal.name}</div>
+                        <div class="meal-description">${meal.description}</div>
+                    </div>
+                `).join('')}
+
+                ${preferences.length > 0 ? `
+                    <div style="margin-top: var(--spacing-lg); padding-top: var(--spacing-lg); border-top: 1px solid var(--gray-200);">
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                            <strong>Applied Preferences:</strong> ${preferences.join(', ')}
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        // Generate mock meals
+        function generateMockMeals(dietType) {
+            const mealTemplates = {
+                'veg': [
+                    { time: 'Breakfast', name: 'Oatmeal with Berries', description: 'Whole grain oats topped with fresh berries and honey', calories: 350 },
+                    { time: 'Lunch', name: 'Quinoa Buddha Bowl', description: 'Quinoa with roasted vegetables, chickpeas, and tahini dressing', calories: 550 },
+                    { time: 'Dinner', name: 'Vegetable Stir-Fry', description: 'Mixed vegetables with tofu in a savory sauce over brown rice', calories: 600 }
+                ],
+                'non-veg': [
+                    { time: 'Breakfast', name: 'Scrambled Eggs & Toast', description: 'Fluffy scrambled eggs with whole wheat toast and avocado', calories: 400 },
+                    { time: 'Lunch', name: 'Grilled Chicken Salad', description: 'Mixed greens with grilled chicken, vegetables, and vinaigrette', calories: 550 },
+                    { time: 'Dinner', name: 'Baked Salmon', description: 'Oven-baked salmon with roasted vegetables and quinoa', calories: 650 }
+                ],
+                'protein': [
+                    { time: 'Breakfast', name: 'Protein Pancakes', description: 'High-protein pancakes with Greek yogurt and berries', calories: 450 },
+                    { time: 'Lunch', name: 'Turkey & Quinoa Bowl', description: 'Lean turkey with quinoa, black beans, and vegetables', calories: 600 },
+                    { time: 'Dinner', name: 'Chicken Breast & Sweet Potato', description: 'Grilled chicken breast with roasted sweet potato and broccoli', calories: 700 }
+                ],
+                'weight-loss': [
+                    { time: 'Breakfast', name: 'Green Smoothie', description: 'Spinach, banana, protein powder, and almond milk blend', calories: 300 },
+                    { time: 'Lunch', name: 'Grilled Chicken Wrap', description: 'Whole wheat wrap with grilled chicken and fresh vegetables', calories: 450 },
+                    { time: 'Dinner', name: 'Zucchini Noodles & Shrimp', description: 'Spiralized zucchini with grilled shrimp and light marinara', calories: 400 }
+                ]
+            };
+
+            return mealTemplates[dietType] || mealTemplates['veg'];
+        }
+
+        // Save plan
+        function savePlan() {
+            SmartCart.showToast('Plan saved successfully!', 'success');
+        }
+
+        // Toggle mobile menu
+        function toggleMobileMenu() {
+            document.querySelector('.nav-links').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>
