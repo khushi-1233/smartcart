@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCart - AI-Powered Grocery Management</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="js/main.js" defer></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="brand-icon">🛒</span>
+                <span class="brand-name">SmartCart</span>
+            </div>
+            <div class="nav-links">
+                <a href="#" class="nav-item" onclick="scrollToTop(event)">Home</a>
+                <a href="#features" class="nav-item">Features</a>
+                <a href="#about" class="nav-item">About</a>
+                <a href="auth.html" class="nav-item nav-cta">Get Started</a>
+            </div>
+            <button class="theme-toggle" onclick="SmartCart.toggleDarkMode()" aria-label="Toggle dark mode">
+                <span id="theme-icon">🌙</span>
+            </button>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">Smart Grocery Management,<br>Powered by AI</h1>
+                <p class="hero-subtitle">Track your inventory, get intelligent recipe suggestions, monitor expiry dates, and optimize your grocery spending—all in one place.</p>
+                <div class="hero-cta">
+                    <a href="auth.html" class="btn btn-primary btn-large">Start Free Today</a>
+                    <a href="#features" class="btn btn-secondary btn-large">Learn More</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">10K+</span>
+                        <span class="stat-label">Active Users</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">50K+</span>
+                        <span class="stat-label">Recipes</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">30%</span>
+                        <span class="stat-label">Avg. Savings</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="hero-card">
+                    <div class="card-icon">🎯</div>
+                    <h3>AI-Powered Insights</h3>
+                    <p>Get smart recommendations based on your shopping habits</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Everything You Need</h2>
+                <p class="section-subtitle">Comprehensive tools to manage your groceries efficiently</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📦</div>
+                    <h3 class="feature-title">Inventory Management</h3>
+                    <p class="feature-description">Track all your grocery items with quantity and expiry dates. Never let food go to waste again.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3 class="feature-title">AI Recipe Suggestions</h3>
+                    <p class="feature-description">Get personalized recipe recommendations based on ingredients you already have at home.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚠️</div>
+                    <h3 class="feature-title">Expiry Warnings</h3>
+                    <p class="feature-description">Receive timely alerts when items are about to expire, helping you plan meals better.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Smart Analytics</h3>
+                    <p class="feature-description">Visualize spending patterns and get insights to optimize your grocery budget.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3 class="feature-title">Auto Restock</h3>
+                    <p class="feature-description">AI predicts when you'll run out of items and suggests optimal restock times.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3 class="feature-title">Budget Tracking</h3>
+                    <p class="feature-description">Set budgets and track expenses to stay within your grocery spending limits.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">How It Works</h2>
+                <p class="section-subtitle">Get started in three simple steps</p>
+            </div>
+            
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">Add Your Items</h3>
+                    <p class="step-description">Quickly add grocery items with quantity and expiry dates to your digital inventory.</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">Get AI Insights</h3>
+                    <p class="step-description">Our AI analyzes your inventory and provides personalized recommendations.</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3 class="step-title">Save Money</h3>
+                    <p class="step-description">Reduce waste, discover recipes, and optimize your grocery spending effortlessly.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">About SmartCart</h2>
+                <p class="section-subtitle">Your intelligent companion for smarter grocery shopping</p>
+            </div>
+            
+            <div class="about-content">
+                <div class="about-card">
+                    <div class="about-icon">🎯</div>
+                    <h3>Our Mission</h3>
+                    <p>We're on a mission to help families reduce food waste and save money through intelligent inventory management and AI-powered meal planning.</p>
+                </div>
+                
+                <div class="about-card">
+                    <div class="about-icon">🤖</div>
+                    <h3>AI Technology</h3>
+                    <p>Our advanced AI analyzes your shopping patterns, dietary preferences, and inventory to provide personalized recipe suggestions and smart meal plans.</p>
+                </div>
+                
+                <div class="about-card">
+                    <div class="about-icon">🌱</div>
+                    <h3>Sustainability</h3>
+                    <p>By tracking expiry dates and suggesting recipes based on what you have, we help you minimize food waste and contribute to a more sustainable future.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2 class="cta-title">Ready to Transform Your Grocery Shopping?</h2>
+                <p class="cta-subtitle">Join thousands of users saving time and money with SmartCart</p>
+                <a href="auth.html" class="btn btn-primary btn-large">Create Free Account</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="brand-icon">🛒</span>
+                    <span class="brand-name">SmartCart</span>
+                    <p class="footer-tagline">AI-powered grocery management for everyone</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Product</h4>
+                        <a href="#features">Features</a>
+                        <a href="#about">About</a>
+                        <a href="auth.html">Sign In</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Company</h4>
+                        <a href="#about">About</a>
+                        <a href="home.html">Home</a>
+                        <a href="auth.html">Get Started</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 SmartCart. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Scroll to top smoothly
+        function scrollToTop(event) {
+            event.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Toggle mobile menu
+        function toggleMobileMenu() {
+            document.querySelector('.nav-links').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

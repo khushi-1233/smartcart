@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCart - Analytics</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            padding-top: 70px;
+            background: var(--bg-secondary);
+        }
+
+        .page-header {
+            background: var(--bg-primary);
+            padding: var(--spacing-2xl) 0;
+            margin-bottom: var(--spacing-2xl);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        body.dark-mode .page-header {
+            border-bottom-color: var(--gray-700);
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-xl);
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .stat-card {
+            background: var(--bg-primary);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+        }
+
+        body.dark-mode .stat-card {
+            border-color: var(--gray-700);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .chart-card {
+            background: var(--bg-primary);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        body.dark-mode .chart-card {
+            border-color: var(--gray-700);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .chart-placeholder {
+            height: 300px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="js/main.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="nav-brand">
+                <span class="brand-icon">🛒</span>
+                <span class="brand-name">SmartCart</span>
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-item">Dashboard</a>
+                <a href="inventory.html" class="nav-item">Inventory</a>
+                <a href="suggestions.html" class="nav-item">AI Suggestions</a>
+                <a href="profile.html" class="nav-item active">Analytics</a>
+                <a href="settings.html" class="nav-item">Settings</a>
+                <button class="btn btn-small" onclick="SmartCart.toggleDarkMode()">
+                    <span id="theme-icon">🌙</span>
+                </button>
+                <button class="btn btn-small btn-secondary" onclick="SmartCart.handleLogout()">
+                    Logout
+                </button>
+            </div>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <h1 class="page-title">📊 Spending Analytics</h1>
+            <p class="page-description">Track your grocery spending patterns and insights</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Analytics Cards -->
+        <div class="analytics-grid">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value" id="total-spent">₹0</div>
+                <div class="stat-label">Total Spent This Month</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-value" id="avg-weekly">₹0</div>
+                <div class="stat-label">Average Weekly Spend</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-value" id="budget-status">On Track</div>
+                <div class="stat-label">Budget Status</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💾</div>
+                <div class="stat-value" id="savings">₹0</div>
+                <div class="stat-label">Total Savings</div>
+            </div>
+        </div>
+
+        <!-- Spending Chart -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3>Weekly Spending Trend</h3>
+                <button class="btn btn-small btn-secondary" onclick="loadAnalytics()">
+                    🔄 Refresh
+                </button>
+            </div>
+            <div class="chart-placeholder" id="spending-chart">
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+                    <p>Spending chart will be displayed here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load analytics on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await SmartCart.requireAuth();
+            await loadAnalytics();
+        });
+
+        // Load analytics data
+        async function loadAnalytics() {
+            try {
+                SmartCart.showLoading();
+                const { data: { user } } = await supabase.auth.getUser();
+
+                // Load spending analytics
+                const { data: analytics, error } = await supabase
+                    .from('spending_analytics')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('week', { ascending: false })
+                    .limit(4);
+
+                if (error && error.code !== 'PGRST116') throw error;
+
+                // Load budget
+                const { data: budget } = await supabase
+                    .from('budgets')
+                    .select('amount')
+                    .eq('user_id', user.id)
+                    .single();
+
+                // Calculate stats
+                const totalSpent = (analytics || []).reduce((sum, a) => sum + parseFloat(a.amount || 0), 0);
+                const avgWeekly = analytics && analytics.length > 0 ? totalSpent / analytics.length : 0;
+                const budgetAmount = budget?.amount || 500;
+                const savings = Math.max(0, budgetAmount - totalSpent);
+                const budgetStatus = totalSpent <= budgetAmount ? 'On Track' : 'Over Budget';
+
+                // Update UI
+                document.getElementById('total-spent').textContent = SmartCart.formatCurrency(totalSpent);
+                document.getElementById('avg-weekly').textContent = SmartCart.formatCurrency(avgWeekly);
+                document.getElementById('budget-status').textContent = budgetStatus;
+                document.getElementById('budget-status').style.color = budgetStatus === 'On Track' ? 'var(--success)' : 'var(--danger)';
+                document.getElementById('savings').textContent = SmartCart.formatCurrency(savings);
+
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                SmartCart.showToast('Failed to load analytics', 'error');
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Toggle mobile menu
+        function toggleMobileMenu() {
+            document.querySelector('.nav-links').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

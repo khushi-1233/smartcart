@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCart - Login & Sign Up</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .auth-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-light) 100%);
+            padding: var(--spacing-lg);
+        }
+
+        body.dark-mode .auth-page {
+            background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-900) 100%);
+        }
+
+        .auth-container {
+            background: var(--bg-primary);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+        }
+
+        .auth-header {
+            text-align: center;
+            padding: var(--spacing-2xl) var(--spacing-xl) var(--spacing-lg);
+        }
+
+        .auth-logo {
+            font-size: 3rem;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .auth-title {
+            font-size: 2rem;
+            margin-bottom: var(--spacing-sm);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .auth-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        body.dark-mode .auth-tabs {
+            border-bottom-color: var(--gray-700);
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: var(--spacing-md);
+            text-align: center;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            position: relative;
+        }
+
+        .auth-tab:hover {
+            color: var(--primary-color);
+        }
+
+        .auth-tab.active {
+            color: var(--primary-color);
+        }
+
+        .auth-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary-color);
+        }
+
+        .auth-form-container {
+            padding: var(--spacing-xl);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-primary);
+            border: 1px solid var(--gray-200);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-base);
+        }
+
+        body.dark-mode .theme-toggle {
+            border-color: var(--gray-700);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--bg-primary);
+            border: 1px solid var(--gray-200);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-base);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+
+        body.dark-mode .back-button {
+            border-color: var(--gray-700);
+        }
+
+        .back-button:hover {
+            transform: scale(1.05);
+            background: var(--gray-50);
+        }
+
+        body.dark-mode .back-button:hover {
+            background: var(--gray-800);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: var(--spacing-lg) 0;
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--gray-300);
+        }
+
+        body.dark-mode .divider::before,
+        body.dark-mode .divider::after {
+            background: var(--gray-600);
+        }
+
+        .divider span {
+            padding: 0 var(--spacing-md);
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: var(--spacing-lg);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .auth-footer a {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: var(--spacing-md);
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-tertiary);
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            color: var(--text-primary);
+        }
+
+        .password-toggle svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="js/main.js"></script>
+</head>
+<body>
+    <!-- Back Button -->
+    <a href="home.html" class="back-button" aria-label="Back to home">
+        <span>←</span>
+        <span>Back to Home</span>
+    </a>
+
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" onclick="SmartCart.toggleDarkMode()" aria-label="Toggle dark mode">
+        <span id="theme-icon">🌙</span>
+    </button>
+
+    <!-- Auth Page -->
+    <div class="auth-page">
+        <div class="auth-container">
+            <!-- Header -->
+            <div class="auth-header">
+                <div class="auth-logo">🛒</div>
+                <h1 class="auth-title">SmartCart</h1>
+                <p class="auth-subtitle">Smart Grocery Management, Powered by AI</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchTab('login')">Login</button>
+                <button class="auth-tab" onclick="switchTab('signup')">Sign Up</button>
+            </div>
+
+            <!-- Form Container -->
+            <div class="auth-form-container">
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form active" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="login-email">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="login-email" 
+                            class="form-input" 
+                            placeholder="you@example.com"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="login-password">Password</label>
+                        <div class="input-wrapper">
+                            <input 
+                                type="password" 
+                                id="login-password" 
+                                class="form-input" 
+                                placeholder="••••••••"
+                                required
+                            >
+                            <button type="button" class="password-toggle" onclick="togglePassword('login-password')">
+                                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large" style="width: 100%; margin-top: var(--spacing-md);">
+                        Login
+                    </button>
+
+                    <div class="auth-footer">
+                        <a href="#" onclick="handleForgotPassword(event)">Forgot password?</a>
+                    </div>
+                </form>
+
+                <!-- Sign Up Form -->
+                <form id="signup-form" class="auth-form" onsubmit="handleSignup(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="signup-fullname">Full Name</label>
+                        <input 
+                            type="text" 
+                            id="signup-fullname" 
+                            class="form-input" 
+                            placeholder="John Doe"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-email">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="signup-email" 
+                            class="form-input" 
+                            placeholder="you@example.com"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-password">Password</label>
+                        <div class="input-wrapper">
+                            <input 
+                                type="password" 
+                                id="signup-password" 
+                                class="form-input" 
+                                placeholder="Min. 6 characters"
+                                required
+                            >
+                            <button type="button" class="password-toggle" onclick="togglePassword('signup-password')">
+                                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-confirm-password">Confirm Password</label>
+                        <div class="input-wrapper">
+                            <input 
+                                type="password" 
+                                id="signup-confirm-password" 
+                                class="form-input" 
+                                placeholder="Repeat password"
+                                required
+                            >
+                            <button type="button" class="password-toggle" onclick="togglePassword('signup-confirm-password')">
+                                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large" style="width: 100%; margin-top: var(--spacing-md);">
+                        Create Account
+                    </button>
+
+                    <div class="auth-footer">
+                        Already have an account? <a href="#" onclick="switchTab('login'); return false;">Login</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Switch between tabs
+        function switchTab(tab) {
+            // Update tab buttons
+            const tabs = document.querySelectorAll('.auth-tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            
+            // Add active class to the correct tab button
+            if (tab === 'login') {
+                tabs[0].classList.add('active');
+            } else {
+                tabs[1].classList.add('active');
+            }
+
+            // Update forms
+            const forms = document.querySelectorAll('.auth-form');
+            forms.forEach(f => f.classList.remove('active'));
+            
+            if (tab === 'login') {
+                document.getElementById('login-form').classList.add('active');
+            } else {
+                document.getElementById('signup-form').classList.add('active');
+            }
+        }
+
+        // Toggle password visibility
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const button = event.target.closest('button');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>`;
+            } else {
+                input.type = 'password';
+                button.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>`;
+            }
+        }
+
+        // Handle login
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                SmartCart.showLoading();
+
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                SmartCart.showToast('Login successful!', 'success');
+                
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
+
+            } catch (error) {
+                console.error('Login error:', error);
+                SmartCart.showToast(error.message, 'error');
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Handle signup
+        async function handleSignup(event) {
+            event.preventDefault();
+            
+            const fullName = document.getElementById('signup-fullname').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm-password').value;
+
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                SmartCart.showToast('Passwords do not match', 'error');
+                return;
+            }
+
+            // Validate password length
+            if (password.length < 6) {
+                SmartCart.showToast('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            try {
+                SmartCart.showLoading();
+
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: fullName
+                        }
+                    }
+                });
+
+                if (error) throw error;
+
+                // Check if user already exists (Supabase returns user even if exists)
+                if (data.user && data.user.identities && data.user.identities.length === 0) {
+                    SmartCart.hideLoading();
+                    SmartCart.showToast('Account already exists! Redirecting to login...', 'error');
+                    
+                    // Clear signup form
+                    document.getElementById('signup-form').reset();
+                    
+                    // Pre-fill email in login form
+                    document.getElementById('login-email').value = email;
+                    
+                    // Switch to login tab immediately
+                    setTimeout(() => {
+                        switchTab('login');
+                    }, 1500);
+                    return;
+                }
+
+                SmartCart.showToast('Account created! Please check your email to confirm.', 'success');
+                
+                // Clear form
+                document.getElementById('signup-form').reset();
+                
+                // Switch to login tab
+                setTimeout(() => {
+                    switchTab('login');
+                }, 2000);
+
+            } catch (error) {
+                console.error('Signup error:', error);
+                
+                // Handle specific error messages
+                if (error.message.includes('already registered') || error.message.includes('already exists')) {
+                    SmartCart.showToast('Account already exists! Redirecting to login...', 'error');
+                    document.getElementById('signup-form').reset();
+                    document.getElementById('login-email').value = email;
+                    setTimeout(() => {
+                        switchTab('login');
+                    }, 1500);
+                } else {
+                    SmartCart.showToast(error.message, 'error');
+                }
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Handle forgot password
+        async function handleForgotPassword(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            
+            if (!email) {
+                SmartCart.showToast('Please enter your email address', 'error');
+                return;
+            }
+
+            try {
+                SmartCart.showLoading();
+
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + '/reset-password.html'
+                });
+
+                if (error) throw error;
+
+                SmartCart.showToast('Password reset email sent!', 'success');
+
+            } catch (error) {
+                console.error('Password reset error:', error);
+                SmartCart.showToast(error.message, 'error');
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Check if user is already logged in
+        async function checkExistingSession() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                window.location.href = 'dashboard.html';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            checkExistingSession();
+        });
+    </script>
+</body>
+</html>
