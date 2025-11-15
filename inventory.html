@@ -512,37 +512,64 @@
         async function requestNotificationPermission() {
             if (!('Notification' in window)) {
                 console.log('This browser does not support notifications');
+                SmartCart.showToast('⚠️ Your browser does not support notifications', 'warning');
                 return;
             }
 
             if (Notification.permission === 'granted') {
                 notificationPermission = true;
+                console.log('Notification permission already granted');
             } else if (Notification.permission !== 'denied') {
+                console.log('Requesting notification permission...');
                 const permission = await Notification.requestPermission();
                 notificationPermission = (permission === 'granted');
+                
+                if (notificationPermission) {
+                    console.log('Notification permission granted!');
+                    SmartCart.showToast('✅ Notifications enabled! You will receive expiry reminders.', 'success');
+                } else {
+                    console.log('Notification permission denied');
+                    SmartCart.showToast('⚠️ Notification permission denied. Enable in browser settings.', 'warning');
+                }
+            } else {
+                console.log('Notification permission was previously denied');
+                SmartCart.showToast('⚠️ Notifications blocked. Check your browser settings.', 'warning');
             }
         }
 
         // Show browser notification
         function showBrowserNotification(title, body, icon = '⏰') {
-            if (!notificationPermission) return;
+            console.log('Attempting to show notification:', title, body);
+            console.log('Permission status:', notificationPermission, Notification.permission);
+            
+            if (!notificationPermission) {
+                console.log('No notification permission, skipping');
+                return;
+            }
 
-            const notification = new Notification(title, {
-                body: body,
-                icon: '/favicon.ico',
-                badge: '/favicon.ico',
-                tag: 'smartcart-expiry',
-                requireInteraction: false,
-                silent: false
-            });
+            try {
+                const notification = new Notification(title, {
+                    body: body,
+                    icon: '/favicon.ico',
+                    badge: '/favicon.ico',
+                    tag: 'smartcart-expiry',
+                    requireInteraction: false,
+                    silent: false
+                });
 
-            notification.onclick = function() {
-                window.focus();
-                this.close();
-            };
+                console.log('Notification created successfully');
 
-            // Auto close after 10 seconds
-            setTimeout(() => notification.close(), 10000);
+                notification.onclick = function() {
+                    window.focus();
+                    this.close();
+                };
+
+                // Auto close after 10 seconds
+                setTimeout(() => notification.close(), 10000);
+            } catch (error) {
+                console.error('Error showing notification:', error);
+                SmartCart.showToast('⚠️ Failed to show notification: ' + error.message, 'error');
+            }
         }
 
         // Check expiring items and send notification

@@ -481,7 +481,8 @@
                     options: {
                         data: {
                             full_name: fullName
-                        }
+                        },
+                        emailRedirectTo: 'https://smartcartplus.netlify.app/confirm.html'
                     }
                 });
 
@@ -505,15 +506,20 @@
                     return;
                 }
 
-                SmartCart.showToast('Account created! Please check your email to confirm.', 'success');
+                SmartCart.showToast('Account created! Please check your email (including spam folder) to confirm.', 'success');
                 
                 // Clear form
                 document.getElementById('signup-form').reset();
                 
+                // Show additional info
+                setTimeout(() => {
+                    SmartCart.showToast('📧 Confirmation link sent! Check your inbox and spam folder.', 'info');
+                }, 2000);
+                
                 // Switch to login tab
                 setTimeout(() => {
                     switchTab('login');
-                }, 2000);
+                }, 4000);
 
             } catch (error) {
                 console.error('Signup error:', error);

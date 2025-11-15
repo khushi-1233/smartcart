@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCart - Email Confirmed</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .confirm-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-light) 100%);
+            padding: var(--spacing-lg);
+        }
+
+        body.dark-mode .confirm-page {
+            background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-900) 100%);
+        }
+
+        .confirm-container {
+            background: var(--bg-primary);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl);
+            width: 100%;
+            max-width: 500px;
+            padding: var(--spacing-2xl);
+            text-align: center;
+        }
+
+        .confirm-icon {
+            font-size: 4rem;
+            margin-bottom: var(--spacing-lg);
+            animation: bounce 1s ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .confirm-title {
+            font-size: 1.75rem;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+
+        .confirm-message {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xl);
+            line-height: 1.6;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .redirect-info {
+            margin-top: var(--spacing-lg);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="confirm-page">
+        <div class="confirm-container">
+            <div class="confirm-icon">✅</div>
+            <h1 class="confirm-title">Email Confirmed!</h1>
+            <p class="confirm-message">
+                Your email has been successfully verified. You can now access all features of SmartCart.
+            </p>
+            <div class="confirm-actions">
+                <a href="dashboard.html" class="btn btn-primary">Go to Dashboard</a>
+                <a href="auth.html" class="btn btn-secondary">Login</a>
+            </div>
+            <p class="redirect-info">Redirecting to dashboard in <span id="countdown">3</span> seconds...</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        // Apply saved theme
+        SmartCart.applySavedTheme();
+
+        // Countdown and redirect
+        let countdown = 3;
+        const countdownEl = document.getElementById('countdown');
+        
+        const interval = setInterval(() => {
+            countdown--;
+            countdownEl.textContent = countdown;
+            
+            if (countdown <= 0) {
+                clearInterval(interval);
+                window.location.href = 'dashboard.html';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
