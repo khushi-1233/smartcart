@@ -358,7 +358,16 @@
                     </div>
                     <div class="form-group" style="margin: 0;">
                         <label class="form-label" for="item-quantity">Quantity</label>
-                        <input type="number" id="item-quantity" class="form-input" placeholder="1" min="1" required>
+                        <div style="display: flex; gap: 4px;">
+                            <input type="number" id="item-quantity" class="form-input" placeholder="1" min="0.01" step="0.01" required style="flex: 1;">
+                            <select id="item-unit" class="form-input" style="width: 80px;">
+                                <option value="pcs">pcs</option>
+                                <option value="kg">kg</option>
+                                <option value="g">g</option>
+                                <option value="L">L</option>
+                                <option value="mL">mL</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group" style="margin: 0;">
                         <label class="form-label" for="item-price">Price (₹)</label>
@@ -378,8 +387,14 @@
             <div class="items-header">
                 <h3>Your Inventory</h3>
                 <div style="display: flex; gap: var(--spacing-sm);">
+                    <button class="btn btn-small" style="background: #10b981; color: white;" onclick="exportToCSV()">
+                        📥 Export CSV
+                    </button>
                     <button class="btn btn-small btn-secondary" onclick="loadItems()">
                         🔄 Refresh
+                    </button>
+                    <button class="btn btn-small" style="background: #f59e0b; color: white;" onclick="testScheduledNotification()">
+                        🔔 Test Alert
                     </button>
                 </div>
             </div>
@@ -659,13 +674,17 @@
                 }
                 
                 return `
-                    <tr style="${expiryInfo.status === 'expired' ? 'opacity: 0.7; background: rgba(220, 38, 38, 0.05);' : ''}">\n                        <td><strong>${expiryInfo.icon} ${item.name}</strong></td>
-                        <td>${item.quantity}</td>
+                    <tr style="${expiryInfo.status === 'expired' ? 'opacity: 0.7; background: rgba(220, 38, 38, 0.05);' : ''}">
+                        <td><strong>${expiryInfo.icon} ${item.name}</strong></td>
+                        <td>${item.quantity} ${item.unit || 'pcs'}</td>
                         <td>${SmartCart.formatCurrency(item.price)}</td>
                         <td>${SmartCart.formatDate(item.expiry)}</td>
                         <td><span class="status-badge ${statusClass}" style="background: ${expiryInfo.color}20; color: ${expiryInfo.color}; border: 1px solid ${expiryInfo.color}40;">${statusText}</span></td>
                         <td>
                             <div class="item-actions">
+                                <button class="icon-btn" onclick="quickEditQuantity('${item.id}', ${item.quantity})" title="Edit Quantity" style="background: #3b82f6; color: white;">
+                                    ✏️
+                                </button>
                                 <button class="icon-btn delete" onclick="deleteItem('${item.id}')" title="Delete">
                                     🗑️
                                 </button>
@@ -790,7 +809,8 @@
             event.preventDefault();
 
             const name = document.getElementById('item-name').value;
-            const quantity = parseInt(document.getElementById('item-quantity').value);
+            const quantity = parseFloat(document.getElementById('item-quantity').value);
+            const unit = document.getElementById('item-unit').value;
             const price = parseFloat(document.getElementById('item-price').value);
             const expiry = document.getElementById('item-expiry').value;
 
@@ -804,6 +824,7 @@
                         user_id: user.id,
                         name: name,
                         quantity: quantity,
+                        unit: unit,
                         price: price,
                         expiry: expiry
                     }]);
@@ -929,6 +950,84 @@
             } catch (error) {
                 console.error('Error sending email:', error);
                 SmartCart.showToast('Note: Email sent (check your inbox for password reset link)', 'warning');
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Test scheduled notification (same as automatic reminders)
+        function testScheduledNotification() {
+            console.log('Testing scheduled notification');
+            checkAndNotifyExpiringItems('Test');
+        }
+
+        // Export inventory to CSV
+        function exportToCSV() {
+            if (items.length === 0) {
+                SmartCart.showToast('No items to export', 'warning');
+                return;
+            }
+
+            // Create CSV content
+            const headers = ['Item Name', 'Quantity', 'Unit', 'Price (₹)', 'Expiry Date', 'Status', 'Days Until Expiry'];
+            const csvRows = [headers.join(',')];
+
+            items.forEach(item => {
+                const expiryStatus = getExpiryStatus(item.expiry);
+                const row = [
+                    `"${item.name}"`,
+                    item.quantity,
+                    item.unit || 'pcs',
+                    item.price,
+                    item.expiry,
+                    expiryStatus.status,
+                    expiryStatus.days
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            const csvContent = csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `smartcart-inventory-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            SmartCart.showToast('✅ Inventory exported successfully!', 'success');
+        }
+
+        // Quick edit quantity
+        async function quickEditQuantity(itemId, currentQuantity) {
+            const newQuantity = prompt(`Enter new quantity:`, currentQuantity);
+            
+            if (newQuantity === null || newQuantity === '') return;
+            
+            const quantity = parseFloat(newQuantity);
+            if (isNaN(quantity) || quantity <= 0) {
+                SmartCart.showToast('Invalid quantity', 'error');
+                return;
+            }
+
+            try {
+                SmartCart.showLoading();
+
+                const { error } = await supabase
+                    .from('grocery_items')
+                    .update({ quantity: quantity })
+                    .eq('id', itemId);
+
+                if (error) throw error;
+
+                SmartCart.showToast('Quantity updated!', 'success');
+                await loadItems(true);
+
+            } catch (error) {
+                console.error('Error updating quantity:', error);
+                SmartCart.showToast('Failed to update quantity', 'error');
             } finally {
                 SmartCart.hideLoading();
             }

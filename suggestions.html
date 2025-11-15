@@ -320,9 +320,14 @@
         <!-- Recipes Header -->
         <div class="recipes-header">
             <h2 id="recipes-count">All Recipes</h2>
-            <button class="btn btn-small btn-secondary" onclick="loadRecipes()">
-                🔄 Refresh
-            </button>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-small btn-primary" onclick="generateAIRecipe()" id="ai-recipe-btn" style="display: none;">
+                    ✨ Generate AI Recipe
+                </button>
+                <button class="btn btn-small btn-secondary" onclick="loadRecipes()">
+                    🔄 Refresh
+                </button>
+            </div>
         </div>
 
         <!-- Recipes Grid -->
@@ -355,7 +360,92 @@
                 selectedIngredients.push(ingredient);
             }
 
+            // Show/hide AI recipe button based on selection
+            const aiBtn = document.getElementById('ai-recipe-btn');
+            if (selectedIngredients.length > 0) {
+                aiBtn.style.display = 'block';
+            } else {
+                aiBtn.style.display = 'none';
+            }
+
             filterRecipes();
+        }
+
+        // Generate AI recipe from selected ingredients
+        async function generateAIRecipe() {
+            if (selectedIngredients.length === 0) {
+                SmartCart.showToast('Please select ingredients first', 'warning');
+                return;
+            }
+
+            try {
+                SmartCart.showLoading();
+                const recipe = await fetchFlowiseRecipe(selectedIngredients);
+                renderFlowiseRecipe(recipe);
+                SmartCart.showToast('✨ AI recipe generated!', 'success');
+            } catch (error) {
+                console.error('Error generating AI recipe:', error);
+                SmartCart.showToast('⚠️ Backend unavailable. Using database recipes.', 'warning');
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Fetch recipe from backend API (Flowise)
+        async function fetchFlowiseRecipe(ingredients) {
+            try {
+                const response = await fetch("http://localhost:8000/recipe/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        ingredients: ingredients
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Backend error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.recipe;
+            } catch (error) {
+                console.error('Error fetching Flowise recipe:', error);
+                throw error;
+            }
+        }
+
+        // Render Flowise recipe in a modal or dedicated section
+        function renderFlowiseRecipe(recipe) {
+            const grid = document.getElementById('recipes-grid');
+
+            // Create a special card for AI-generated recipe
+            const aiRecipeHTML = `
+                <div class="recipe-card" style="border: 2px solid var(--primary-color); background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));">
+                    <div style="background: var(--primary-color); color: white; padding: 8px; text-align: center; font-weight: 600; border-radius: 8px 8px 0 0; margin: -20px -20px 16px -20px;">
+                        ✨ AI Generated Recipe
+                    </div>
+                    <div class="recipe-content">
+                        <h3 class="recipe-title">${recipe.recipe_name || recipe.name}</h3>
+                        
+                        <div class="recipe-ingredients">
+                            <div class="ingredients-label">Ingredients:</div>
+                            <ul style="margin: 12px 0; padding-left: 24px;">
+                                ${recipe.ingredients.map(i => `<li style="margin: 6px 0;">${i}</li>`).join('')}
+                            </ul>
+                        </div>
+
+                        <div class="recipe-steps show">
+                            <div class="ingredients-label" style="margin-bottom: var(--spacing-md);">Cooking Steps:</div>
+                            <ol style="margin: 12px 0; padding-left: 24px;">
+                                ${recipe.steps.map(s => `<li style="margin: 8px 0;">${s}</li>`).join('')}
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Prepend AI recipe to the grid
+            grid.innerHTML = aiRecipeHTML + grid.innerHTML;
         }
 
         // Load recipes from database

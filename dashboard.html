@@ -540,47 +540,78 @@
                 SmartCart.showLoading();
                 const { data: { user } } = await supabase.auth.getUser();
 
+                // Call backend API to generate meal plan
+                const response = await fetch("http://localhost:8000/plan/generate-plan", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        budget: parseFloat(budget),
+                        diet: selectedDietType,
+                        duration: selectedBudgetType, // using budget type as duration (daily/weekly/monthly)
+                        preferences: preferences
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Backend error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
                 // Save plan to database
-                const { data, error } = await supabase
-                    .from('plans')
+                const { error } = await supabase
+                    .from('meal_plans')
                     .insert([{
                         user_id: user.id,
                         budget: parseFloat(budget),
                         budget_type: selectedBudgetType,
                         diet_type: selectedDietType,
                         preferences: preferences,
+                        plan_data: data.plan, // Store the AI-generated plan
                         status: 'generated',
                         saved: false
-                    }])
-                    .select()
-                    .single();
+                    }]);
 
                 if (error) throw error;
 
-                // Generate and display mock plan
-                displayGeneratedPlan(budget, selectedBudgetType, selectedDietType, preferences);
-                SmartCart.showToast('Plan generated successfully!', 'success');
+                // Display the AI-generated plan
+                displayGeneratedPlan(data.plan, budget, selectedBudgetType, selectedDietType, preferences);
+                SmartCart.showToast('AI Plan generated successfully!', 'success');
 
             } catch (error) {
                 console.error('Error generating plan:', error);
-                SmartCart.showToast('Failed to generate plan', 'error');
+                
+                // Fallback to mock data if backend is unavailable
+                if (error.message.includes('fetch') || error.message.includes('Backend')) {
+                    SmartCart.showToast('⚠️ Backend unavailable. Showing sample plan.', 'warning');
+                    displayGeneratedPlan(null, budget, selectedBudgetType, selectedDietType, preferences);
+                } else {
+                    SmartCart.showToast('Failed to generate plan: ' + error.message, 'error');
+                }
             } finally {
                 SmartCart.hideLoading();
             }
         }
 
         // Display generated plan
-        function displayGeneratedPlan(budget, budgetType, dietType, preferences) {
+        function displayGeneratedPlan(aiPlan, budget, budgetType, dietType, preferences) {
             const planResult = document.getElementById('plan-result');
             
-            // Generate mock meals based on diet type
-            const meals = generateMockMeals(dietType);
+            // If we have AI-generated plan, use it; otherwise, use mock data
+            let meals;
+            if (aiPlan && aiPlan.meals) {
+                meals = aiPlan.meals;
+            } else {
+                // Fallback to mock meals
+                meals = generateMockMeals(dietType);
+            }
             
             planResult.innerHTML = `
                 <div class="plan-header">
                     <div>
                         <h2>Your ${budgetType.charAt(0).toUpperCase() + budgetType.slice(1)} Plan</h2>
                         <p style="color: var(--text-secondary);">Budget: ${SmartCart.formatCurrency(budget)}</p>
+                        ${aiPlan && aiPlan.total_cost ? `<p style="color: var(--text-secondary);">Estimated Cost: ${SmartCart.formatCurrency(aiPlan.total_cost)}</p>` : ''}
                     </div>
                     <button class="btn btn-primary" onclick="savePlan()">
                         💾 Save Plan
@@ -590,11 +621,12 @@
                 ${meals.map(meal => `
                     <div class="plan-meal">
                         <div class="meal-header">
-                            <div class="meal-time">${meal.time}</div>
-                            <div class="meal-calories">${meal.calories} cal</div>
+                            <div class="meal-time">${meal.time || meal.meal_type || 'Meal'}</div>
+                            <div class="meal-calories">${meal.calories || meal.estimated_calories || 0} cal</div>
                         </div>
-                        <div class="meal-name">${meal.name}</div>
-                        <div class="meal-description">${meal.description}</div>
+                        <div class="meal-name">${meal.name || meal.dish_name}</div>
+                        <div class="meal-description">${meal.description || meal.ingredients || ''}</div>
+                        ${meal.cost ? `<div style="margin-top: 8px; color: var(--primary-color); font-weight: 600;">${SmartCart.formatCurrency(meal.cost)}</div>` : ''}
                     </div>
                 `).join('')}
 

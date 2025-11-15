@@ -69,6 +69,14 @@
             justify-content: center;
             font-size: 3rem;
             margin: 0 auto var(--spacing-lg);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .form-group {
@@ -220,6 +228,43 @@
             <div class="profile-avatar" id="profile-avatar">
                 👤
             </div>
+            
+            <!-- Profile Photo Actions -->
+            <div style="text-align: center; margin-bottom: var(--spacing-lg);">
+                <input type="file" id="photo-upload" accept="image/*" style="display: none;" onchange="handlePhotoUpload(event)">
+                <button type="button" class="btn btn-small btn-primary" onclick="document.getElementById('photo-upload').click()">
+                    📸 Upload Photo
+                </button>
+                <button type="button" class="btn btn-small btn-secondary" onclick="deletePhoto()" id="delete-photo-btn" style="display: none;">
+                    🗑️ Remove Photo
+                </button>
+            </div>
+
+            <!-- Current Profile Details Display -->
+            <div style="background: var(--bg-secondary); padding: var(--spacing-lg); border-radius: var(--radius-md); margin-bottom: var(--spacing-xl);">
+                <div style="display: grid; gap: var(--spacing-md);">
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px;">Name</div>
+                        <div id="display-name" style="font-weight: 600; color: var(--text-primary);">Loading...</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px;">Email</div>
+                        <div id="display-email" style="font-weight: 600; color: var(--text-primary);">Loading...</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px;">Phone</div>
+                        <div id="display-phone" style="font-weight: 600; color: var(--text-primary);">Not set</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px;">Location</div>
+                        <div id="display-location" style="font-weight: 600; color: var(--text-primary);">Not set</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--gray-200); padding-top: var(--spacing-lg); margin-top: var(--spacing-lg);">
+                <h3 style="font-size: 1rem; margin-bottom: var(--spacing-md); color: var(--text-primary);">Edit Profile</h3>
+            </div>
 
             <form id="profile-form" onsubmit="updateProfile(event)">
                 <div class="form-group">
@@ -320,6 +365,7 @@
 
     <script>
         let currentUser = null;
+        let currentPhotoUrl = null;
 
         // Load user data on page load
         document.addEventListener('DOMContentLoaded', async () => {
@@ -337,14 +383,12 @@
 
                 // Set email
                 document.getElementById('user-email').value = user.email;
-
-                // Set avatar initial
-                const initial = user.email.charAt(0).toUpperCase();
-                document.getElementById('profile-avatar').textContent = initial;
+                document.getElementById('display-email').textContent = user.email;
 
                 // Load user metadata from auth.users metadata
                 if (user.user_metadata && user.user_metadata.full_name) {
                     document.getElementById('full-name').value = user.user_metadata.full_name;
+                    document.getElementById('display-name').textContent = user.user_metadata.full_name;
                 }
 
                 // Load user profile from database
@@ -358,6 +402,32 @@
                     document.getElementById('full-name').value = profile.full_name || '';
                     document.getElementById('phone').value = profile.phone || '';
                     document.getElementById('location').value = profile.location || '';
+                    
+                    // Update display fields
+                    document.getElementById('display-name').textContent = profile.full_name || 'Not set';
+                    document.getElementById('display-phone').textContent = profile.phone || 'Not set';
+                    document.getElementById('display-location').textContent = profile.location || 'Not set';
+                    
+                    // Handle profile photo
+                    if (profile.photo_url) {
+                        currentPhotoUrl = profile.photo_url;
+                        document.getElementById('profile-avatar').innerHTML = `<img src="${profile.photo_url}" alt="Profile Photo">`;
+                        document.getElementById('delete-photo-btn').style.display = 'inline-block';
+                    } else {
+                        currentPhotoUrl = null;
+                        const initial = user.email.charAt(0).toUpperCase();
+                        document.getElementById('profile-avatar').textContent = initial;
+                        document.getElementById('delete-photo-btn').style.display = 'none';
+                    }
+                } else {
+                    // Set defaults if no profile
+                    document.getElementById('display-name').textContent = user.user_metadata?.full_name || 'Not set';
+                    document.getElementById('display-phone').textContent = 'Not set';
+                    document.getElementById('display-location').textContent = 'Not set';
+                    currentPhotoUrl = null;
+                    const initial = user.email.charAt(0).toUpperCase();
+                    document.getElementById('profile-avatar').textContent = initial;
+                    document.getElementById('delete-photo-btn').style.display = 'none';
                 }
 
                 // Load budget
@@ -529,6 +599,118 @@
             } catch (error) {
                 console.error('Error updating budget:', error);
                 SmartCart.showToast('Failed to update budget', 'error');
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Handle photo upload
+        async function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                SmartCart.showToast('Please select an image file', 'error');
+                return;
+            }
+
+            // Validate file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                SmartCart.showToast('Image size must be less than 2MB', 'error');
+                return;
+            }
+
+            try {
+                SmartCart.showLoading();
+                const { data: { user } } = await supabase.auth.getUser();
+
+                // Create unique file name
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+                const filePath = `${fileName}`;
+
+                // Upload to Supabase Storage
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('profile-photos')
+                    .upload(filePath, file, {
+                        cacheControl: '3600',
+                        upsert: true
+                    });
+
+                if (uploadError) {
+                    if (uploadError.message.includes('not found')) {
+                        SmartCart.showToast('❌ Storage bucket not configured. Please contact admin.', 'error');
+                        console.error('Create a bucket named "profile-photos" in Supabase Storage with public access');
+                    }
+                    throw uploadError;
+                }
+
+                // Get public URL
+                const { data: urlData } = supabase.storage
+                    .from('profile-photos')
+                    .getPublicUrl(filePath);
+
+                const photoUrl = urlData.publicUrl;
+
+                // Update user profile with photo URL
+                const { error: updateError } = await supabase
+                    .from('user_profiles')
+                    .upsert({
+                        user_id: user.id,
+                        photo_url: photoUrl,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id' });
+
+                if (updateError) throw updateError;
+
+                SmartCart.showToast('✅ Profile photo uploaded!', 'success');
+                await loadProfile(); // Reload to show new photo
+
+            } catch (error) {
+                console.error('Error uploading photo:', error);
+                SmartCart.showToast('Failed to upload photo: ' + error.message, 'error');
+            } finally {
+                SmartCart.hideLoading();
+                event.target.value = ''; // Reset input
+            }
+        }
+
+        // Delete profile photo
+        async function deletePhoto() {
+            if (!confirm('Are you sure you want to remove your profile photo?')) return;
+
+            try {
+                SmartCart.showLoading();
+                const { data: { user } } = await supabase.auth.getUser();
+
+                // Delete from storage if URL exists
+                if (currentPhotoUrl) {
+                    const urlParts = currentPhotoUrl.split('/');
+                    const fileName = urlParts[urlParts.length - 1];
+                    
+                    await supabase.storage
+                        .from('profile-photos')
+                        .remove([fileName]);
+                }
+
+                // Update profile to remove photo URL
+                const { error } = await supabase
+                    .from('user_profiles')
+                    .upsert({
+                        user_id: user.id,
+                        photo_url: null,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id' });
+
+                if (error) throw error;
+
+                SmartCart.showToast('Profile photo removed', 'success');
+                await loadProfile(); // Reload to show default avatar
+
+            } catch (error) {
+                console.error('Error deleting photo:', error);
+                SmartCart.showToast('Failed to delete photo: ' + error.message, 'error');
             } finally {
                 SmartCart.hideLoading();
             }
