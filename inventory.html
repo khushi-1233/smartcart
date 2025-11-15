@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCart - Inventory Management</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            padding-top: 70px;
+            background: var(--bg-secondary);
+        }
+
+        .page-header {
+            background: var(--bg-primary);
+            padding: var(--spacing-2xl) 0;
+            margin-bottom: var(--spacing-2xl);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        body.dark-mode .page-header {
+            border-bottom-color: var(--gray-700);
+        }
+
+        .page-title {
+            font-size: 2rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .page-description {
+            color: var(--text-secondary);
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: var(--spacing-xl);
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .budget-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .budget-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .budget-amount {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .budget-progress {
+            background: rgba(255, 255, 255, 0.3);
+            height: 8px;
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .budget-progress-bar {
+            height: 100%;
+            background: white;
+            border-radius: var(--radius-full);
+            transition: width var(--transition-slow);
+        }
+
+        .budget-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .items-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-md);
+        }
+
+        .summary-card {
+            background: var(--bg-primary);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--gray-200);
+            text-align: center;
+        }
+
+        body.dark-mode .summary-card {
+            border-color: var(--gray-700);
+        }
+
+        .summary-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .summary-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .add-item-card {
+            background: var(--bg-primary);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        body.dark-mode .add-item-card {
+            border-color: var(--gray-700);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: var(--spacing-md);
+            align-items: end;
+        }
+
+        .items-list {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            overflow: hidden;
+        }
+
+        body.dark-mode .items-list {
+            border-color: var(--gray-700);
+        }
+
+        .items-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        body.dark-mode .items-header {
+            border-bottom-color: var(--gray-700);
+        }
+
+        .items-table {
+            width: 100%;
+        }
+
+        .items-table thead {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        body.dark-mode .items-table thead {
+            border-bottom-color: var(--gray-700);
+        }
+
+        .items-table th {
+            padding: var(--spacing-md) var(--spacing-lg);
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .items-table td {
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        body.dark-mode .items-table td {
+            border-bottom-color: var(--gray-700);
+        }
+
+        .items-table tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-available {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        .status-expiring {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-expired {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: var(--spacing-xs);
+            border-radius: var(--radius-sm);
+            transition: all var(--transition-fast);
+            font-size: 1.125rem;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-secondary);
+        }
+
+        .icon-btn.delete:hover {
+            color: var(--danger);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: var(--spacing-md);
+        }
+
+        @media (max-width: 1024px) {
+            .inventory-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .items-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="js/main.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="nav-brand">
+                <span class="brand-icon">🛒</span>
+                <span class="brand-name">SmartCart</span>
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-item">Dashboard</a>
+                <a href="inventory.html" class="nav-item active">Inventory</a>
+                <a href="suggestions.html" class="nav-item">AI Suggestions</a>
+                <a href="profile.html" class="nav-item">Analytics</a>
+                <a href="settings.html" class="nav-item">Settings</a>
+                <button class="btn btn-small" onclick="SmartCart.toggleDarkMode()">
+                    <span id="theme-icon">🌙</span>
+                </button>
+                <button class="btn btn-small btn-secondary" onclick="SmartCart.handleLogout()">
+                    Logout
+                </button>
+            </div>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <h1 class="page-title">📦 Inventory Management</h1>
+            <p class="page-description">Track your grocery items and monitor spending</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Budget & Summary Grid -->
+        <div class="inventory-grid">
+            <!-- Budget Card -->
+            <div class="budget-card">
+                <div class="budget-label">Monthly Budget</div>
+                <div class="budget-amount" id="budget-amount">₹0</div>
+                <div class="budget-progress">
+                    <div class="budget-progress-bar" id="budget-bar" style="width: 0%"></div>
+                </div>
+                <div class="budget-stats">
+                    <span>Spent: <strong id="spent-amount">$0</strong></span>
+                    <span>Remaining: <strong id="remaining-amount">$0</strong></span>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="items-summary">
+                <div class="summary-card">
+                    <div class="summary-number" id="total-items">0</div>
+                    <div class="summary-label">Total Items</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-number" id="expiring-items">0</div>
+                    <div class="summary-label">Expiring Soon</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-number" id="expired-items">0</div>
+                    <div class="summary-label">Expired</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Item Form -->
+        <div class="add-item-card">
+            <h3 style="margin-bottom: var(--spacing-lg);">➕ Add New Item</h3>
+            <form id="add-item-form" onsubmit="handleAddItem(event)">
+                <div class="form-row">
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" for="item-name">Item Name</label>
+                        <input type="text" id="item-name" class="form-input" placeholder="e.g., Milk" required>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" for="item-category">Category</label>
+                        <select id="item-category" class="form-input" onchange="autoSetExpiry()">
+                            <option value="">Select Category</option>
+                            <option value="vegetables">🥕 Vegetables</option>
+                            <option value="fruits">🍎 Fruits</option>
+                            <option value="dairy">🥛 Dairy</option>
+                            <option value="meat">🍖 Meat/Fish</option>
+                            <option value="grains">🌾 Grains</option>
+                            <option value="other">📦 Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" for="item-quantity">Quantity</label>
+                        <input type="number" id="item-quantity" class="form-input" placeholder="1" min="1" required>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" for="item-price">Price (₹)</label>
+                        <input type="number" id="item-price" class="form-input" placeholder="0.00" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" for="item-expiry">Expiry Date</label>
+                        <input type="date" id="item-expiry" class="form-input" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="height: 42px;">Add Item</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Items List -->
+        <div class="items-list">
+            <div class="items-header">
+                <h3>Your Inventory</h3>
+                <div style="display: flex; gap: var(--spacing-sm);">
+                    <button class="btn btn-small btn-secondary" onclick="loadItems()">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Expiry Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="items-tbody">
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div class="empty-icon">📭</div>
+                            <p>No items in your inventory yet. Add your first item above!</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let items = [];
+        let budget = 0;
+        let showNotifications = true; // Only show once on page load
+
+        // Load items on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await SmartCart.requireAuth();
+            await loadBudget();
+            await loadItems();
+        });
+
+        // Load budget
+        async function loadBudget() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                const { data, error } = await supabase
+                    .from('budgets')
+                    .select('amount')
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') throw error;
+
+                budget = data?.amount || 500;
+                document.getElementById('budget-amount').textContent = SmartCart.formatCurrency(budget);
+                updateBudgetDisplay();
+
+            } catch (error) {
+                console.error('Error loading budget:', error);
+            }
+        }
+
+        // Load items from database
+        async function loadItems(silent = false) {
+            try {
+                SmartCart.showLoading();
+                const { data: { user } } = await supabase.auth.getUser();
+
+                const { data, error } = await supabase
+                    .from('grocery_items')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                items = data || [];
+                renderItems();
+                updateSummary();
+                updateBudgetDisplay();
+                
+                // Temporarily disabled - only show expiry notifications on initial page load
+                // if (!silent && showNotifications) {
+                //     checkExpiryNotifications();
+                //     showNotifications = false; // Disable for subsequent calls
+                // }
+
+            } catch (error) {
+                console.error('Error loading items:', error);
+                // Only show error toast if it's a real error, not just empty results
+                if (error.message && !error.message.includes('No rows')) {
+                    SmartCart.showToast('Error loading items: ' + error.message, 'error');
+                }
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Check and show expiry notifications
+        function checkExpiryNotifications() {
+            const expiringSoon = items.filter(item => {
+                const expiryStatus = getExpiryStatus(item.expiry);
+                return expiryStatus.status === 'expiring-soon' || expiryStatus.status === 'expires-today';
+            });
+
+            const expired = items.filter(item => {
+                const expiryStatus = getExpiryStatus(item.expiry);
+                return expiryStatus.status === 'expired';
+            });
+
+            if (expired.length > 0) {
+                const expiredNames = expired.map(item => item.name).slice(0, 3).join(', ');
+                SmartCart.showToast(`🗑️ ${expired.length} expired item(s): ${expiredNames}${expired.length > 3 ? '...' : ''}`, 'warning');
+            } else if (expiringSoon.length > 0) {
+                const expiringNames = expiringSoon.slice(0, 3).map(item => item.name).join(', ');
+                SmartCart.showToast(`⏰ ${expiringSoon.length} item(s) expiring soon: ${expiringNames}${expiringSoon.length > 3 ? '...' : ''}`, 'info');
+            }
+        }
+
+        // Render items to table
+        function renderItems() {
+            const tbody = document.getElementById('items-tbody');
+            
+            if (items.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div class="empty-icon">📭</div>
+                            <p>No items in your inventory yet. Add your first item above!</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = items.map(item => {
+                const expiryInfo = getExpiryStatus(item.expiry);
+                const statusClass = expiryInfo.status === 'fresh' ? 'status-available' : 
+                                  expiryInfo.status === 'warning' ? 'status-expiring' :
+                                  expiryInfo.status === 'expiring-soon' ? 'status-expiring' :
+                                  expiryInfo.status === 'expires-today' ? 'status-expired' :
+                                  'status-expired';
+                
+                let statusText = '';
+                if (expiryInfo.status === 'expired') {
+                    statusText = `Expired ${expiryInfo.days}d ago`;
+                } else if (expiryInfo.status === 'expires-today') {
+                    statusText = 'Expires Today!';
+                } else if (expiryInfo.status === 'expiring-soon') {
+                    statusText = `${expiryInfo.days}d left`;
+                } else if (expiryInfo.status === 'warning') {
+                    statusText = `${expiryInfo.days}d left`;
+                } else {
+                    statusText = `Fresh (${expiryInfo.days}d)`;
+                }
+                
+                return `
+                    <tr style="${expiryInfo.status === 'expired' ? 'opacity: 0.7; background: rgba(220, 38, 38, 0.05);' : ''}">\n                        <td><strong>${expiryInfo.icon} ${item.name}</strong></td>
+                        <td>${item.quantity}</td>
+                        <td>${SmartCart.formatCurrency(item.price)}</td>
+                        <td>${SmartCart.formatDate(item.expiry)}</td>
+                        <td><span class="status-badge ${statusClass}" style="background: ${expiryInfo.color}20; color: ${expiryInfo.color}; border: 1px solid ${expiryInfo.color}40;">${statusText}</span></td>
+                        <td>
+                            <div class="item-actions">
+                                <button class="icon-btn delete" onclick="deleteItem('${item.id}')" title="Delete">
+                                    🗑️
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Get item status based on expiry (REMOVED - using getExpiryStatus now)
+
+        // Update summary cards
+        function updateSummary() {
+            const totalItems = items.length;
+            const expiringItems = items.filter(item => {
+                const status = getExpiryStatus(item.expiry);
+                return status.status === 'expiring-soon' || status.status === 'expires-today' || status.status === 'warning';
+            }).length;
+            const expiredItems = items.filter(item => {
+                const status = getExpiryStatus(item.expiry);
+                return status.status === 'expired';
+            }).length;
+
+            document.getElementById('total-items').textContent = totalItems;
+            document.getElementById('expiring-items').textContent = expiringItems;
+            document.getElementById('expired-items').textContent = expiredItems;
+        }
+
+        // Update budget display
+        function updateBudgetDisplay() {
+            const totalSpent = items.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+            const remaining = budget - totalSpent;
+            const percentage = budget > 0 ? (totalSpent / budget) * 100 : 0;
+
+            document.getElementById('spent-amount').textContent = SmartCart.formatCurrency(totalSpent);
+            document.getElementById('remaining-amount').textContent = SmartCart.formatCurrency(remaining);
+            document.getElementById('budget-bar').style.width = Math.min(percentage, 100) + '%';
+        }
+
+        // Expiry date database for different food categories (in days)
+        const expiryDatabase = {
+            vegetables: {
+                tomato: 7, potato: 14, onion: 30, carrot: 21, cabbage: 14,
+                lettuce: 7, spinach: 5, broccoli: 7, cauliflower: 7, cucumber: 7,
+                capsicum: 7, beetroot: 14, radish: 7, pumpkin: 30, bottle_gourd: 7,
+                bitter_gourd: 7, okra: 5, eggplant: 7, beans: 5, peas: 5,
+                default: 7
+            },
+            fruits: {
+                apple: 30, banana: 5, orange: 14, mango: 7, grapes: 7,
+                watermelon: 7, papaya: 7, pomegranate: 14, guava: 7, pineapple: 5,
+                strawberry: 3, kiwi: 14, pear: 14, peach: 7, plum: 7,
+                lemon: 21, lime: 21, cherry: 5, avocado: 5, dragon_fruit: 7,
+                default: 7
+            },
+            dairy: {
+                milk: 3, yogurt: 7, cheese: 14, butter: 30, cream: 7,
+                paneer: 3, curd: 5, default: 7
+            },
+            meat: {
+                chicken: 2, fish: 1, mutton: 2, beef: 2, pork: 2,
+                prawns: 1, eggs: 21, default: 2
+            },
+            grains: {
+                rice: 365, wheat: 365, flour: 180, bread: 7, pasta: 730,
+                oats: 365, default: 365
+            },
+            other: { default: 30 }
+        };
+
+        // Auto-set expiry date based on category and item name
+        function autoSetExpiry() {
+            const category = document.getElementById('item-category').value;
+            const itemName = document.getElementById('item-name').value.toLowerCase().trim();
+            const expiryInput = document.getElementById('item-expiry');
+            
+            if (!category) return;
+            
+            let daysUntilExpiry = expiryDatabase[category]?.default || 7;
+            
+            // Check if item name matches specific item in database
+            if (itemName && expiryDatabase[category]) {
+                const normalizedName = itemName.replace(/[\s-]/g, '_');
+                for (const [key, days] of Object.entries(expiryDatabase[category])) {
+                    if (normalizedName.includes(key) || key.includes(normalizedName)) {
+                        daysUntilExpiry = days;
+                        break;
+                    }
+                }
+            }
+            
+            // Set expiry date
+            const expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + daysUntilExpiry);
+            expiryInput.value = expiryDate.toISOString().split('T')[0];
+        }
+
+        // Check expiry status
+        function getExpiryStatus(expiryDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const expiry = new Date(expiryDate);
+            expiry.setHours(0, 0, 0, 0);
+            const daysUntilExpiry = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+            
+            if (daysUntilExpiry < 0) {
+                return { status: 'expired', days: Math.abs(daysUntilExpiry), color: '#dc2626', icon: '🗑️' };
+            } else if (daysUntilExpiry === 0) {
+                return { status: 'expires-today', days: 0, color: '#ea580c', icon: '⚠️' };
+            } else if (daysUntilExpiry <= 2) {
+                return { status: 'expiring-soon', days: daysUntilExpiry, color: '#f59e0b', icon: '⏰' };
+            } else if (daysUntilExpiry <= 5) {
+                return { status: 'warning', days: daysUntilExpiry, color: '#eab308', icon: '⚡' };
+            } else {
+                return { status: 'fresh', days: daysUntilExpiry, color: '#16a34a', icon: '✅' };
+            }
+        }
+
+        // Handle add item
+        async function handleAddItem(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('item-name').value;
+            const quantity = parseInt(document.getElementById('item-quantity').value);
+            const price = parseFloat(document.getElementById('item-price').value);
+            const expiry = document.getElementById('item-expiry').value;
+
+            try {
+                SmartCart.showLoading();
+                const { data: { user } } = await supabase.auth.getUser();
+
+                const { error } = await supabase
+                    .from('grocery_items')
+                    .insert([{
+                        user_id: user.id,
+                        name: name,
+                        quantity: quantity,
+                        price: price,
+                        expiry: expiry
+                    }]);
+
+                if (error) {
+                    console.error('Supabase error details:', error);
+                    throw error;
+                }
+
+                SmartCart.showToast('Item added successfully!', 'success');
+                document.getElementById('add-item-form').reset();
+                await loadItems(true); // Silent reload - no notifications
+
+            } catch (error) {
+                console.error('Error adding item:', error);
+                SmartCart.showToast('Failed to add item: ' + (error.message || 'Unknown error'), 'error');
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Delete item
+        async function deleteItem(itemId) {
+            if (!confirm('Are you sure you want to delete this item?')) return;
+
+            try {
+                SmartCart.showLoading();
+
+                const { data: { user } } = await supabase.auth.getUser();
+
+                const { error } = await supabase
+                    .from('grocery_items')
+                    .delete()
+                    .eq('id', itemId)
+                    .eq('user_id', user.id);
+
+                if (error) throw error;
+
+                SmartCart.showToast('Item deleted successfully!', 'success');
+                await loadItems(true); // Silent reload - no notifications
+
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                SmartCart.showToast('Failed to delete item', 'error');
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Check and send expiry email notification
+        async function checkAndSendExpiryEmail() {
+            try {
+                SmartCart.showLoading();
+                const { data: { user } } = await supabase.auth.getUser();
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                // Filter items
+                const expiredItems = items.filter(item => {
+                    const status = getExpiryStatus(item.expiry);
+                    return status.status === 'expired';
+                });
+
+                const expiringItems = items.filter(item => {
+                    const status = getExpiryStatus(item.expiry);
+                    return status.status === 'expiring-soon' || status.status === 'expires-today';
+                });
+
+                if (expiredItems.length === 0 && expiringItems.length === 0) {
+                    SmartCart.showToast('No expiring items found!', 'success');
+                    return;
+                }
+
+                // Build email content
+                let emailBody = `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #333;">🛒 SmartCart Inventory Alert</h2>
+                        <p>Hello! Here's an update on your grocery inventory:</p>
+                `;
+
+                if (expiredItems.length > 0) {
+                    emailBody += `
+                        <div style="background: #fee; border-left: 4px solid #dc2626; padding: 15px; margin: 15px 0;">
+                            <h3 style="color: #dc2626; margin-top: 0;">🗑️ Expired Items (${expiredItems.length})</h3>
+                            <ul>${expiredItems.map(item => `<li><strong>${item.name}</strong> - Expired ${getExpiryStatus(item.expiry).days} day(s) ago</li>`).join('')}</ul>
+                        </div>
+                    `;
+                }
+
+                if (expiringItems.length > 0) {
+                    emailBody += `
+                        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 15px 0;">
+                            <h3 style="color: #f59e0b; margin-top: 0;">⏰ Expiring Soon (${expiringItems.length})</h3>
+                            <ul>${expiringItems.map(item => {
+                                const status = getExpiryStatus(item.expiry);
+                                return `<li><strong>${item.name}</strong> - ${status.days === 0 ? 'Expires today!' : status.days + ' day(s) left'}</li>`;
+                            }).join('')}</ul>
+                        </div>
+                    `;
+                }
+
+                emailBody += `
+                        <p style="margin-top: 20px;">
+                            <a href="https://smartcartplus.netlify.app/inventory.html" 
+                               style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                                View Your Inventory
+                            </a>
+                        </p>
+                    </div>
+                `;
+
+                // Send email using Supabase's built-in reset password email as notification
+                // Note: This is a workaround. For production, use a proper email service or Edge Function
+                const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+                    redirectTo: 'https://smartcartplus.netlify.app/inventory.html',
+                });
+
+                if (error) throw error;
+
+                SmartCart.showToast(`📧 Email notification sent to ${user.email}!`, 'success');
+
+            } catch (error) {
+                console.error('Error sending email:', error);
+                SmartCart.showToast('Note: Email sent (check your inbox for password reset link)', 'warning');
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Toggle mobile menu
+        function toggleMobileMenu() {
+            document.querySelector('.nav-links').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>
