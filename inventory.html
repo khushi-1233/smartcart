@@ -410,12 +410,23 @@
         let items = [];
         let budget = 0;
         let showNotifications = true; // Only show once on page load
+        let notificationPermission = false;
+
+        // Notification times (in 24-hour format)
+        const REMINDER_TIMES = [
+            { hour: 9, minute: 0, label: 'Morning' },      // 9:00 AM
+            { hour: 13, minute: 0, label: 'Afternoon' },   // 1:00 PM
+            { hour: 18, minute: 0, label: 'Evening' },     // 6:00 PM
+            { hour: 21, minute: 0, label: 'Night' }        // 9:00 PM
+        ];
 
         // Load items on page load
         document.addEventListener('DOMContentLoaded', async () => {
             await SmartCart.requireAuth();
             await loadBudget();
             await loadItems();
+            await requestNotificationPermission();
+            scheduleTimedNotifications();
         });
 
         // Load budget
@@ -495,6 +506,92 @@
                 const expiringNames = expiringSoon.slice(0, 3).map(item => item.name).join(', ');
                 SmartCart.showToast(`⏰ ${expiringSoon.length} item(s) expiring soon: ${expiringNames}${expiringSoon.length > 3 ? '...' : ''}`, 'info');
             }
+        }
+
+        // Request notification permission
+        async function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                console.log('This browser does not support notifications');
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                notificationPermission = true;
+            } else if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                notificationPermission = (permission === 'granted');
+            }
+        }
+
+        // Show browser notification
+        function showBrowserNotification(title, body, icon = '⏰') {
+            if (!notificationPermission) return;
+
+            const notification = new Notification(title, {
+                body: body,
+                icon: '/favicon.ico',
+                badge: '/favicon.ico',
+                tag: 'smartcart-expiry',
+                requireInteraction: false,
+                silent: false
+            });
+
+            notification.onclick = function() {
+                window.focus();
+                this.close();
+            };
+
+            // Auto close after 10 seconds
+            setTimeout(() => notification.close(), 10000);
+        }
+
+        // Check expiring items and send notification
+        async function checkAndNotifyExpiringItems(timeLabel) {
+            await loadItems(true); // Refresh items silently
+
+            const expiringSoon = items.filter(item => {
+                const expiryStatus = getExpiryStatus(item.expiry);
+                return expiryStatus.status === 'expiring-soon' || expiryStatus.status === 'expires-today';
+            });
+
+            const expired = items.filter(item => {
+                const expiryStatus = getExpiryStatus(item.expiry);
+                return expiryStatus.status === 'expired';
+            });
+
+            if (expired.length > 0) {
+                const expiredNames = expired.slice(0, 3).map(item => item.name).join(', ');
+                const message = `${expired.length} item(s) have expired: ${expiredNames}${expired.length > 3 ? ' and more' : ''}`;
+                
+                showBrowserNotification('🗑️ SmartCart - Items Expired!', message);
+                SmartCart.showToast(`🗑️ ${message}`, 'error');
+            } else if (expiringSoon.length > 0) {
+                const expiringNames = expiringSoon.slice(0, 3).map(item => item.name).join(', ');
+                const message = `${expiringSoon.length} item(s) expiring soon: ${expiringNames}${expiringSoon.length > 3 ? ' and more' : ''}`;
+                
+                showBrowserNotification(`⏰ SmartCart - ${timeLabel} Reminder`, message);
+                SmartCart.showToast(`⏰ ${message}`, 'warning');
+            }
+        }
+
+        // Schedule timed notifications throughout the day
+        function scheduleTimedNotifications() {
+            // Check every minute if it's time for a notification
+            setInterval(() => {
+                const now = new Date();
+                const currentHour = now.getHours();
+                const currentMinute = now.getMinutes();
+
+                // Check if current time matches any reminder time
+                REMINDER_TIMES.forEach(reminderTime => {
+                    if (currentHour === reminderTime.hour && currentMinute === reminderTime.minute) {
+                        console.log(`Triggering ${reminderTime.label} notification at ${currentHour}:${currentMinute}`);
+                        checkAndNotifyExpiringItems(reminderTime.label);
+                    }
+                });
+            }, 60000); // Check every minute (60000ms)
+
+            console.log('Timed notifications scheduled for:', REMINDER_TIMES.map(t => `${t.hour}:${String(t.minute).padStart(2, '0')} (${t.label})`).join(', '));
         }
 
         // Render items to table
