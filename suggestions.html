@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCart - AI Recipe Suggestions</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            padding-top: 70px;
+            background: var(--bg-secondary);
+        }
+
+        .page-header {
+            background: var(--bg-primary);
+            padding: var(--spacing-2xl) 0;
+            margin-bottom: var(--spacing-2xl);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        body.dark-mode .page-header {
+            border-bottom-color: var(--gray-700);
+        }
+
+        .ingredient-selector {
+            background: var(--bg-primary);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        body.dark-mode .ingredient-selector {
+            border-color: var(--gray-700);
+        }
+
+        .ingredients-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-lg);
+        }
+
+        .ingredient-chip {
+            background: var(--bg-secondary);
+            border: 2px solid var(--gray-300);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all var(--transition-fast);
+        }
+
+        body.dark-mode .ingredient-chip {
+            border-color: var(--gray-600);
+        }
+
+        .ingredient-chip:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .ingredient-chip.selected {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .recipes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .recipes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: var(--spacing-xl);
+        }
+
+        .recipe-card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            overflow: hidden;
+            transition: all var(--transition-base);
+        }
+
+        body.dark-mode .recipe-card {
+            border-color: var(--gray-700);
+        }
+
+        .recipe-card:hover {
+            box-shadow: var(--shadow-xl);
+            transform: translateY(-4px);
+        }
+
+        .recipe-image {
+            height: 200px;
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+        }
+
+        body.dark-mode .recipe-image {
+            background: linear-gradient(135deg, var(--gray-700), var(--gray-800));
+        }
+
+        .recipe-content {
+            padding: var(--spacing-lg);
+        }
+
+        .recipe-title {
+            font-size: 1.25rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .recipe-summary {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+            margin-bottom: var(--spacing-md);
+            line-height: 1.6;
+        }
+
+        .recipe-ingredients {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .ingredients-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .ingredient-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-xs);
+        }
+
+        .ingredient-badge {
+            background: var(--gray-100);
+            color: var(--text-secondary);
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        body.dark-mode .ingredient-badge {
+            background: var(--gray-700);
+        }
+
+        .ingredient-badge.matched {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .recipe-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .expand-btn {
+            background: none;
+            border: 1px solid var(--gray-300);
+            color: var(--text-primary);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all var(--transition-fast);
+            flex: 1;
+        }
+
+        body.dark-mode .expand-btn {
+            border-color: var(--gray-600);
+        }
+
+        .expand-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .recipe-steps {
+            margin-top: var(--spacing-md);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--gray-200);
+            display: none;
+        }
+
+        body.dark-mode .recipe-steps {
+            border-top-color: var(--gray-700);
+        }
+
+        .recipe-steps.show {
+            display: block;
+        }
+
+        .step {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            flex: 1;
+            padding-top: 4px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 5rem;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        @media (max-width: 768px) {
+            .recipes-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .ingredients-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="js/main.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="nav-brand">
+                <span class="brand-icon">🛒</span>
+                <span class="brand-name">SmartCart</span>
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-item">Dashboard</a>
+                <a href="inventory.html" class="nav-item">Inventory</a>
+                <a href="suggestions.html" class="nav-item active">AI Suggestions</a>
+                <a href="profile.html" class="nav-item">Analytics</a>
+                <a href="settings.html" class="nav-item">Settings</a>
+                <button class="btn btn-small" onclick="SmartCart.toggleDarkMode()">
+                    <span id="theme-icon">🌙</span>
+                </button>
+                <button class="btn btn-small btn-secondary" onclick="SmartCart.handleLogout()">
+                    Logout
+                </button>
+            </div>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <h1 class="page-title">🤖 AI Recipe Suggestions</h1>
+            <p class="page-description">Get personalized recipe recommendations based on your ingredients</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Ingredient Selector -->
+        <div class="ingredient-selector">
+            <h3>Select Your Available Ingredients</h3>
+            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                Click on the ingredients you have to see matching recipes
+            </p>
+            <div class="ingredients-grid" id="ingredients-grid">
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'chicken')">🍗 Chicken</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'rice')">🍚 Rice</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'pasta')">🍝 Pasta</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'tomato')">🍅 Tomato</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'onion')">🧅 Onion</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'garlic')">🧄 Garlic</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'beef')">🥩 Beef</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'fish')">🐟 Fish</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'eggs')">🥚 Eggs</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'milk')">🥛 Milk</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'cheese')">🧀 Cheese</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'potato')">🥔 Potato</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'carrot')">🥕 Carrot</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'broccoli')">🥦 Broccoli</div>
+                <div class="ingredient-chip" onclick="toggleIngredient(this, 'spinach')">🥬 Spinach</div>
+            </div>
+        </div>
+
+        <!-- Recipes Header -->
+        <div class="recipes-header">
+            <h2 id="recipes-count">All Recipes</h2>
+            <button class="btn btn-small btn-secondary" onclick="loadRecipes()">
+                🔄 Refresh
+            </button>
+        </div>
+
+        <!-- Recipes Grid -->
+        <div class="recipes-grid" id="recipes-grid">
+            <div class="empty-state">
+                <div class="empty-icon">👨‍🍳</div>
+                <h3>Loading recipes...</h3>
+                <p>Please wait while we fetch delicious recipe suggestions for you!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allRecipes = [];
+        let selectedIngredients = [];
+
+        // Load recipes on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await SmartCart.requireAuth();
+            await loadRecipes();
+        });
+
+        // Toggle ingredient selection
+        function toggleIngredient(element, ingredient) {
+            element.classList.toggle('selected');
+            
+            if (selectedIngredients.includes(ingredient)) {
+                selectedIngredients = selectedIngredients.filter(i => i !== ingredient);
+            } else {
+                selectedIngredients.push(ingredient);
+            }
+
+            filterRecipes();
+        }
+
+        // Load recipes from database
+        async function loadRecipes() {
+            try {
+                SmartCart.showLoading();
+
+                const { data, error } = await supabase
+                    .from('recipes')
+                    .select('*')
+                    .order('name');
+
+                if (error) throw error;
+
+                allRecipes = data || [];
+                filterRecipes();
+
+            } catch (error) {
+                console.error('Error loading recipes:', error);
+                SmartCart.showToast('Failed to load recipes', 'error');
+            } finally {
+                SmartCart.hideLoading();
+            }
+        }
+
+        // Filter recipes based on selected ingredients
+        function filterRecipes() {
+            let filteredRecipes = allRecipes;
+
+            if (selectedIngredients.length > 0) {
+                filteredRecipes = allRecipes.filter(recipe => {
+                    const recipeIngredients = recipe.ingredients || [];
+                    return selectedIngredients.some(selected => 
+                        recipeIngredients.some(recipeIng => 
+                            recipeIng.toLowerCase().includes(selected.toLowerCase())
+                        )
+                    );
+                });
+            }
+
+            renderRecipes(filteredRecipes);
+        }
+
+        // Render recipes to grid
+        function renderRecipes(recipes) {
+            const grid = document.getElementById('recipes-grid');
+            const count = document.getElementById('recipes-count');
+
+            if (selectedIngredients.length > 0) {
+                count.textContent = `${recipes.length} Matching Recipe${recipes.length !== 1 ? 's' : ''}`;
+            } else {
+                count.textContent = `All Recipes (${recipes.length})`;
+            }
+
+            if (recipes.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🔍</div>
+                        <h3>No Recipes Found</h3>
+                        <p>Try selecting different ingredients or add more to your selection!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = recipes.map((recipe, index) => {
+                const ingredients = recipe.ingredients || [];
+                const steps = recipe.steps || [];
+                const icon = getRecipeIcon(recipe.name);
+
+                return `
+                    <div class="recipe-card">
+                        <div class="recipe-image">${icon}</div>
+                        <div class="recipe-content">
+                            <h3 class="recipe-title">${recipe.name}</h3>
+                            <p class="recipe-summary">${recipe.summary || 'A delicious recipe to try!'}</p>
+                            
+                            <div class="recipe-ingredients">
+                                <div class="ingredients-label">Ingredients:</div>
+                                <div class="ingredient-badges">
+                                    ${ingredients.map(ing => {
+                                        const isMatched = selectedIngredients.some(selected => 
+                                            ing.toLowerCase().includes(selected.toLowerCase())
+                                        );
+                                        return `<span class="ingredient-badge ${isMatched ? 'matched' : ''}">${ing}</span>`;
+                                    }).join('')}
+                                </div>
+                            </div>
+
+                            <div class="recipe-actions">
+                                <button class="expand-btn" onclick="toggleSteps(${index})">
+                                    <span id="btn-text-${index}">📖 View Steps</span>
+                                </button>
+                            </div>
+
+                            <div class="recipe-steps" id="steps-${index}">
+                                <div class="ingredients-label" style="margin-bottom: var(--spacing-md);">Cooking Steps:</div>
+                                ${steps.map((step, stepIndex) => `
+                                    <div class="step">
+                                        <div class="step-number">${stepIndex + 1}</div>
+                                        <div class="step-text">${step}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Toggle recipe steps visibility
+        function toggleSteps(index) {
+            const stepsDiv = document.getElementById(`steps-${index}`);
+            const btnText = document.getElementById(`btn-text-${index}`);
+            
+            stepsDiv.classList.toggle('show');
+            
+            if (stepsDiv.classList.contains('show')) {
+                btnText.textContent = '📕 Hide Steps';
+            } else {
+                btnText.textContent = '📖 View Steps';
+            }
+        }
+
+        // Get recipe icon based on name
+        function getRecipeIcon(name) {
+            const nameLower = name.toLowerCase();
+            if (nameLower.includes('chicken')) return '🍗';
+            if (nameLower.includes('pasta') || nameLower.includes('spaghetti')) return '🍝';
+            if (nameLower.includes('rice')) return '🍚';
+            if (nameLower.includes('beef') || nameLower.includes('steak')) return '🥩';
+            if (nameLower.includes('fish') || nameLower.includes('salmon')) return '🐟';
+            if (nameLower.includes('salad')) return '🥗';
+            if (nameLower.includes('soup')) return '🍲';
+            if (nameLower.includes('curry')) return '🍛';
+            return '🍽️';
+        }
+
+        // Toggle mobile menu
+        function toggleMobileMenu() {
+            document.querySelector('.nav-links').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>
