@@ -292,6 +292,27 @@
             
             <h1 class="page-title">🤖 AI Meal Planning</h1>
             <p class="page-description">Get personalized meal plans based on your budget and preferences</p>
+
+            <!-- Quick Stats Banner -->
+            <div style="background: linear-gradient(135deg, var(--primary-color), #7c3aed); padding: 1.5rem; border-radius: 12px; margin-top: 1.5rem; color: white; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold;" id="quick-spent">₹0</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9;">This Month</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold;" id="quick-budget">₹0</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9;">Budget Left</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold;" id="quick-items">0</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9;">Items Tracked</div>
+                </div>
+                <div style="text-align: center; grid-column: 1 / -1;">
+                    <a href="profile.html" style="color: white; text-decoration: none; font-size: 0.9rem; opacity: 0.9; border: 1px solid rgba(255,255,255,0.3); padding: 0.5rem 1rem; border-radius: 6px; display: inline-block;">
+                        📊 View Full Analytics
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -673,10 +694,58 @@
             SmartCart.showToast('Plan saved successfully!', 'success');
         }
 
+        // Load quick stats
+        async function loadQuickStats() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                // Get current month dates
+                const now = new Date();
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+                const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+
+                // Load items from this month
+                const { data: items } = await supabase
+                    .from('grocery_items')
+                    .select('price')
+                    .eq('user_id', user.id)
+                    .gte('created_at', monthStart)
+                    .lte('created_at', monthEnd);
+
+                const totalSpent = (items || []).reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+
+                // Load budget
+                const { data: budget } = await supabase
+                    .from('budgets')
+                    .select('amount')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+
+                const budgetAmount = budget?.amount || 5000;
+                const budgetLeft = Math.max(0, budgetAmount - totalSpent);
+
+                // Load total items count
+                const { count } = await supabase
+                    .from('grocery_items')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', user.id);
+
+                // Update UI
+                document.getElementById('quick-spent').textContent = SmartCart.formatCurrency(totalSpent);
+                document.getElementById('quick-budget').textContent = SmartCart.formatCurrency(budgetLeft);
+                document.getElementById('quick-items').textContent = count || 0;
+            } catch (error) {
+                console.error('Error loading quick stats:', error);
+            }
+        }
+
         // Toggle mobile menu
         function toggleMobileMenu() {
             document.querySelector('.nav-links').classList.toggle('show');
         }
+
+        // Initialize
+        loadQuickStats();
     </script>
 </body>
 </html>
