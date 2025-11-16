@@ -184,6 +184,42 @@ function initNavigation() {
 document.addEventListener('DOMContentLoaded', initNavigation);
 
 // =============================================
+// BUDGET INITIALIZATION
+// =============================================
+
+/**
+ * Initialize default budget for new users
+ */
+async function initializeDefaultBudget() {
+    try {
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) return;
+
+        // Check if user already has a budget
+        const { data: existingBudget } = await window.supabase
+            .from('budgets')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        // If no budget exists, create default one
+        if (!existingBudget) {
+            await window.supabase
+                .from('budgets')
+                .insert({
+                    user_id: user.id,
+                    amount: 5000,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                });
+            console.log('Default budget initialized for user');
+        }
+    } catch (error) {
+        console.error('Error initializing default budget:', error);
+    }
+}
+
+// =============================================
 // USER DROPDOWN FUNCTIONALITY
 // =============================================
 

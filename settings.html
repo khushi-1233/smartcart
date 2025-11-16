@@ -370,6 +370,7 @@
         // Load user data on page load
         document.addEventListener('DOMContentLoaded', async () => {
             await SmartCart.requireAuth();
+            await SmartCart.initializeDefaultBudget();
             await loadProfile();
             await checkEmailVerification();
         });

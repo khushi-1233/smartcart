@@ -441,6 +441,7 @@
         // Load items on page load
         document.addEventListener('DOMContentLoaded', async () => {
             await SmartCart.requireAuth();
+            await SmartCart.initializeDefaultBudget();
             await loadBudget();
             await loadItems();
             await requestNotificationPermission();
